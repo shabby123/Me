@@ -9,8 +9,13 @@
 #import "AddItemTableViewController.h"
 #import "Common.h"
 #import "UIHelper.h"
+#import "TextInputCell.h"
 
-@interface AddItemTableViewController ()
+@interface AddItemTableViewController () {
+    TextInputCell *nameCell;
+    TextInputCell *descriptionCell;
+    UITableViewCell *addPhotoCell;
+}
 
 - (void) cancel;
 - (void) save;
@@ -21,20 +26,25 @@
 
 @synthesize parentItem;
 @synthesize delegate;
-@synthesize itemNameTextField;
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
     self = [super initWithStyle:style];
     if (self) {
         // Custom initialization
+        nameCell = [UIHelper nameCell];
+        descriptionCell = [UIHelper descriptionCell];
+        addPhotoCell = [UIHelper addPhotoCell];
     }
+
     return self;
 }
 
 - (void) viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
 
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"background"]];
     self.navigationItem.leftBarButtonItem = [UIHelper cancelButtonForTarget:self andSelector:@selector(cancel)];
     self.navigationItem.rightBarButtonItem = [UIHelper saveButtonForTarget:self andSelector:@selector(save)];
 }
@@ -48,6 +58,8 @@
  
     // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
     // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+    
+    [nameCell.textField becomeFirstResponder];
 }
 
 - (void)didReceiveMemoryWarning
@@ -64,25 +76,20 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    UITableViewCell *cell;
-    
     if (indexPath.row == 0) {
         // Name text field
-        cell = [tableView dequeueReusableCellWithIdentifier:@"NameCell"];
-        
+        return nameCell;
     }
     else if (indexPath.row == 1) {
         // Description text field
-        cell = [tableView dequeueReusableCellWithIdentifier:@"DescriptionCell"];
+        return descriptionCell;
     }
     else if (indexPath.row == 2) {
         // Add photo
-        cell = [tableView dequeueReusableCellWithIdentifier:@"AddPhotoCel"];
+        return addPhotoCell;
     }
     
-    // Configure the cell...
-    
-    return cell;
+    return nil;
 }
 
 /*
@@ -133,18 +140,19 @@
      <#DetailViewController#> *detailViewController = [[<#DetailViewController#> alloc] initWithNibName:@"<#Nib name#>" bundle:nil];
      // ...
      // Pass the selected object to the new view controller.
-     [self.navigationController pushViewController:detailViewController animated:YES];
+     [self.navigationController pushViewContIroller:detailViewController animated:YES];
      */
+    
 }
 
 - (void) save {
-    if ([itemNameTextField.text length] == 0) {
+    if ([nameCell.textField.text length] == 0) {
         // TODO: Present error
     }
     else {
         Item *item = [[Item alloc] init];
         item.id = [Common generateGuid];
-        item.name = itemNameTextField.text;
+        item.name = nameCell.textField.text;
         
         [delegate addItemViewController:self addedItem:item];
     }

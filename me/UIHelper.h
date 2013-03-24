@@ -7,6 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "TextInputCell.h"
+#import "ItemCell.h"
 
 @interface UIHelper : NSObject
 
@@ -15,5 +17,14 @@
 + (UIBarButtonItem *) addButtonForTarget:(id) target andSelector:(SEL) selector;
 + (UIBarButtonItem *) cancelButtonForTarget:(id) target andSelector:(SEL) selector;
 + (UIBarButtonItem *) saveButtonForTarget:(id) target andSelector:(SEL) selector;
+
++ (UIImage *) imageForCellType:(ItemCellType) cellType;
++ (ItemCell *) cellWithType:(ItemCellType) cellType;
++ (NSString *) nameOfCellType:(ItemCellType) cellType;
++ (void) updateBackgroundImageForCellInTableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath;
+
++ (TextInputCell *) nameCell;
++ (TextInputCell *) descriptionCell;
++ (UITableViewCell *) addPhotoCell;
 
 @end

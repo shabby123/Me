@@ -8,8 +8,8 @@
 
 #import "ListTableViewController.h"
 #import "CoreDataStore.h"
-#import "AddItemTableViewController.h"
 #import "UIHelper.h"
+#import "ItemCell.h"
 
 @interface ListTableViewController () {
     NSMutableArray *items;
@@ -61,46 +61,22 @@
     return [parentItem id];
 }
 
-- (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-    if ([[segue identifier] isEqualToString:@"SegueToSelf"]) {
-        // Get selected item
-        NSIndexPath *indexPath = [self.tableView indexPathForSelectedRow];
-        Item *selectedItem = [items objectAtIndex:(NSUInteger) indexPath.row];
-        
-        // Pass selected item id as parent id to next table view controller
-        ListTableViewController *childTableViewController = (ListTableViewController *)[segue destinationViewController];
-        childTableViewController.parentItem = selectedItem;
-    }
-}
-
-- (id)initWithStyle:(UITableViewStyle)style
-{
-    self = [super initWithStyle:style];
-    if (self) {
-        // Custom initialization
-    }
-    return self;
-}
-
 - (void) viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
-    self.navigationItem.rightBarButtonItem = [UIHelper addButtonForTarget:self andSelector:@selector(showAddItemTableViewController)];    
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"background"]];
+    self.navigationItem.rightBarButtonItem = [UIHelper addButtonForTarget:self andSelector:@selector(showAddItemTableViewController)];
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
 
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
- 
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
-    
     items = [[[CoreDataStore sharedClient] itemsWithParentId:[self parentId]] mutableCopy];
-    
-    [self setEditing:YES animated:NO];
+
+    self.tableView.allowsSelectionDuringEditing = YES;
+    //[self setEditing:YES animated:NO];
 }
 
 - (void)didReceiveMemoryWarning
@@ -132,10 +108,9 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if ([self isRootView] || indexPath.section == 1) {
-        static NSString *CellIdentifier = @"ItemCell";
         //UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
 
-        MCSwipeTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+        /*MCSwipeTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
         
         if (!cell)
         {
@@ -151,21 +126,47 @@
                          thirdColor:[UIColor colorWithRed:254.0/255.0 green:217.0/255.0 blue:56.0/255.0 alpha:1.0]
                      fourthIconName:@"list.png"
                         fourthColor:[UIColor colorWithRed:206.0/255.0 green:149.0/255.0 blue:98.0/255.0 alpha:1.0]];
+        */
         
-        [cell.contentView setBackgroundColor:[UIColor whiteColor]];
-        [cell setSelectionStyle:UITableViewCellSelectionStyleGray];
+        ItemCell *cell;
+        ItemCellType cellType;
+        if (indexPath.row == 0 && items.count == 1) {
+            cellType = ItemCellTypeSingle;
+        }
+        else if (indexPath.row == 0) {
+            cellType = ItemCellTypeTop;
+        }
+        else if (indexPath.row < (items.count - 1) && items.count > 2) {
+            cellType = ItemCellTypeMiddle;
+        }
+        else {
+            cellType = ItemCellTypeBottom;
+        }
+        
+        cell = [tableView dequeueReusableCellWithIdentifier:[UIHelper nameOfCellType:cellType]];
+        if (!cell) {
+            cell = [UIHelper cellWithType:cellType];
+        }
         
         // Configure the cell...
-        cell.textLabel.text = [[items objectAtIndex:(NSUInteger) indexPath.row] name];
-        //[cell setMode:MCSwipeTableViewCellModeSwitch];
-        [cell setMode:MCSwipeTableViewCellModeExit];
+        cell.nameLabel.text = [[items objectAtIndex:(NSUInteger) indexPath.row] name];
+        cell.descriptionLabel.text = @"This is the description of the cell";
+        
+        cell.delegate = self;
         
         return cell;
     }
 
     // This is the top cell, containing information about the level we are on right now
-    static NSString *CellIdentifier = @"EditItemCell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
+    static NSString *CellIdentifier = @"ParentItemCell";
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
+        //cell.contentView.backgroundColor = [UIColor clearColor];
+        
+    }
     
     // Configure the cell...
     cell.textLabel.text = parentItem.name;
@@ -173,26 +174,9 @@
     return cell;
 }
 
-/*// Override to support conditional editing of the table view.
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
-}*/
-
-/*// Override to support editing the table view.
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        // Delete the row from the data source
-        [[CoreDataStore sharedClient] deleteItemWithId:[[items objectAtIndex:indexPath.row] id]];
-        [items removeObjectAtIndex:indexPath.row];
-        [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    }   
- else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-    }
-}*/
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return 63;
+}
 
 - (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath{
     return UITableViewCellEditingStyleNone;
@@ -222,9 +206,9 @@
     return NO;
 }
 
-// Prevent the user from moving the row to another section
 - (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath
 {
+    // Prevent the user from moving the row to another section
     if (sourceIndexPath.section != proposedDestinationIndexPath.section) {
         NSInteger row = 0;
         if (sourceIndexPath.section < proposedDestinationIndexPath.section) {
@@ -232,11 +216,47 @@
         }
         return [NSIndexPath indexPathForRow:row inSection:sourceIndexPath.section];
     }
+    
+    /*if (!isMovingRow) {
+        isMovingRow = true;
+        previousProposedDestinationIndexPath = [NSIndexPath indexPathForRow:proposedDestinationIndexPath.row inSection:proposedDestinationIndexPath.section];
+    }
+    
+    NSIndexPath *tmpProposedDestinationIndexPath;
+    NSIndexPath *tmpSourceDestinationIndexPath;
+    if ((previousProposedDestinationIndexPath != nil) && (sourceIndexPath.row == proposedDestinationIndexPath.row)) {
+        tmpProposedDestinationIndexPath = previousProposedDestinationIndexPath;
+        tmpSourceDestinationIndexPath = sourceIndexPath;
+
+    }
+    else {
+        tmpSourceDestinationIndexPath = sourceIndexPath;
+        tmpProposedDestinationIndexPath = proposedDestinationIndexPath;
+    }
+    
+    
+    NSLog(@"---------");
+    NSLog(@"Source: %ld Dest: %ld", (long)tmpSourceDestinationIndexPath.row, (long)tmpProposedDestinationIndexPath.row);
+    */
+    // Update the cells background images
+    [UIHelper
+     updateBackgroundImageForCellInTableView:tableView
+     targetIndexPathForMoveFromRowAtIndexPath:sourceIndexPath
+     toProposedIndexPath:proposedDestinationIndexPath];
 
     return proposedDestinationIndexPath;
 }
 
 #pragma mark - Table view delegate
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if ([self isRootView] || indexPath.section == 1) {
+        ListTableViewController *listTableViewController = [[ListTableViewController alloc] initWithStyle:UITableViewStylePlain];
+        listTableViewController.parentItem = [items objectAtIndex:(NSUInteger) indexPath.row];
+
+        [self.navigationController pushViewController:listTableViewController animated:YES];
+    }
+}
 
 #pragma mark - MCSwipeTableViewCellDelegate
 

@@ -23,6 +23,4 @@
 @property (nonatomic, strong) Item *parentItem;
 @property (nonatomic, weak) id<AddItemTableViewControllerDelegate> delegate;
 
-@property (strong, nonatomic) IBOutlet UITextField *itemNameTextField;
-
 @end

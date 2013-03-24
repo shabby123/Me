@@ -11,5 +11,6 @@
 @interface Common : NSObject
 
 + (NSString *) generateGuid;
++ (UIColor *) colorWithHexString:(NSString *) hex;
 
 @end
